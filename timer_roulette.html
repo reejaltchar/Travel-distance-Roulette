@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>India Travel Roulette</title>
+<style>
+  :root {
+    --bg: #080b18;
+    --bg2: #0d1126;
+    --bg3: #111630;
+    --glass: rgba(255,255,255,0.05);
+    --glass-border: rgba(160,140,220,0.15);
+    --accent: #7c6fe0;
+    --accent2: #9b8fe8;
+    --gold: #a78bfa;
+    --teal: #818cf8;
+    --purple: #c4b5fd;
+    --blue: #93c5fd;
+    --pink: #f9a8d4;
+    --green: #86efac;
+    --text: #e8e4f8;
+    --text2: #a099c8;
+    --text3: #6b6490;
+    --success: #86efac;
+    --radius: 16px;
+    --radius-sm: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Floating background orbs */
+  .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+  .orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.15;
+    animation: floatOrb 12s ease-in-out infinite alternate;
+  }
+  .orb1 { width: 400px; height: 400px; background: #4c3bb0; top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 300px; height: 300px; background: #2d1f6e; bottom: -50px; right: -50px; animation-delay: -4s; }
+  .orb3 { width: 250px; height: 250px; background: #1e3a6e; top: 50%; left: 50%; animation-delay: -8s; }
+  @keyframes floatOrb { from { transform: translate(0,0) scale(1); } to { transform: translate(30px,20px) scale(1.1); } }
+
+  .app { position: relative; z-index: 1; max-width: 1200px; margin: 0 auto; padding: 24px 16px; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 40px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  
+  header h1 { font-size: clamp(28px, 5vw, 48px); font-weight: 800; letter-spacing: -1px;
+    background: linear-gradient(135deg, #e8e4f8 0%, #c4b5fd 50%, #93c5fd 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  header p { color: var(--text2); font-size: 16px; margin-top: 8px; }
+
+  /* Glass card */
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  /* Main grid */
+  .main-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px; }
+  @media (max-width: 768px) { .main-grid { grid-template-columns: 1fr; } }
+
+  /* Source selector */
+  .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text3); margin-bottom: 12px; }
+  .search-wrap { position: relative; }
+  .search-wrap input {
+    width: 100%; background: rgba(255,255,255,0.07); border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm); padding: 12px 16px; color: var(--text); font-size: 15px;
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-wrap input:focus { border-color: var(--accent); }
+  .search-wrap input::placeholder { color: var(--text3); }
+  .dropdown {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--bg2); border: 1px solid var(--glass-border); border-radius: var(--radius-sm);
+    max-height: 200px; overflow-y: auto; z-index: 100; display: none;
+  }
+  .dropdown.open { display: block; }
+  .dropdown-item { padding: 10px 16px; cursor: pointer; font-size: 14px; color: var(--text2); transition: background 0.15s; }
+  .dropdown-item:hover, .dropdown-item.selected { background: rgba(124,111,224,0.2); color: var(--text); }
+  .dropdown-item small { color: var(--text3); font-size: 12px; }
+  .selected-city {
+    margin-top: 12px; padding: 10px 14px; background: rgba(124,111,224,0.12);
+    border: 1px solid rgba(124,111,224,0.3); border-radius: var(--radius-sm);
+    font-size: 14px; display: none;
+  }
+  .selected-city.show { display: flex; align-items: center; gap: 8px; }
+  .city-badge { font-weight: 700; color: var(--accent2); }
+  .state-tag { font-size: 12px; color: var(--text3); background: rgba(255,255,255,0.05); padding: 2px 8px; border-radius: 20px; }
+
+  /* Roulette Wheel */
+  .wheel-section { display: flex; flex-direction: column; align-items: center; }
+  .wheel-container { position: relative; width: 280px; height: 280px; margin: 0 auto 20px; }
+  #rouletteCanvas { border-radius: 50%; cursor: pointer; }
+  .wheel-pointer {
+    position: absolute; top: -16px; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0;
+    border-left: 12px solid transparent; border-right: 12px solid transparent;
+    border-top: 28px solid #c4b5fd;
+    filter: drop-shadow(0 0 8px rgba(196,181,253,0.7));
+    z-index: 10;
+  }
+  .wheel-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    width: 50px; height: 50px; background: var(--bg); border-radius: 50%;
+    border: 3px solid var(--glass-border); display: flex; align-items: center; justify-content: center;
+    font-size: 20px; z-index: 10;
+  }
+  .spin-btn {
+    background: linear-gradient(135deg, #7c6fe0, #c4b5fd);
+    color: #fff; border: none; border-radius: 50px; padding: 14px 40px;
+    font-size: 16px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px;
+    transition: transform 0.2s, box-shadow 0.2s; width: 100%; max-width: 240px;
+    box-shadow: 0 4px 20px rgba(124,111,224,0.4);
+  }
+  .spin-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(124,111,224,0.6); }
+  .spin-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  /* Destination card */
+  .dest-card { display: none; }
+  .dest-card.show { display: block; }
+  .dest-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px; }
+  .dest-name { font-size: 28px; font-weight: 800; color: var(--text); line-height: 1.1; }
+  .dest-state { font-size: 14px; color: var(--text2); margin-top: 4px; }
+  .dest-type-badge {
+    padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 1px; white-space: nowrap;
+  }
+  .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+  .stat-box {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm); padding: 12px;
+  }
+  .stat-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 800; }
+  .stat-unit { font-size: 13px; color: var(--text2); margin-left: 2px; }
+
+  /* Travel times */
+  .travel-modes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+  .mode-card {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm); padding: 12px; text-align: center; cursor: pointer;
+    transition: all 0.2s; position: relative; overflow: hidden;
+  }
+  .mode-card.active { border-color: var(--accent); background: rgba(124,111,224,0.15); }
+  .mode-card:hover { border-color: rgba(124,111,224,0.5); }
+  .mode-icon { font-size: 22px; margin-bottom: 4px; }
+  .mode-name { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; }
+  .mode-time { font-size: 15px; font-weight: 700; color: var(--text); margin-top: 2px; }
+  .mode-speed { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  /* Timer */
+  .timer-section { display: none; }
+  .timer-section.show { display: block; }
+  .timer-display {
+    text-align: center; padding: 20px;
+    background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border); border-radius: var(--radius-sm);
+    margin-bottom: 12px;
+  }
+  .timer-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .timer-digits { font-size: 48px; font-weight: 800; letter-spacing: 4px; font-variant-numeric: tabular-nums;
+    background: linear-gradient(135deg, var(--purple), var(--blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .timer-mode-wrap { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; }
+  .timer-mode-btn {
+    flex: 1; padding: 8px; background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm); color: var(--text2); font-size: 13px; cursor: pointer;
+    transition: all 0.2s; font-weight: 600;
+  }
+  .timer-mode-btn.active { background: rgba(124,111,224,0.15); border-color: var(--accent); color: var(--purple); }
+  .timer-controls { display: flex; gap: 8px; }
+  .timer-btn {
+    flex: 1; padding: 10px; border: 1px solid var(--glass-border);
+    border-radius: var(--radius-sm); font-size: 14px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s;
+  }
+  .timer-btn.start { background: rgba(134,239,172,0.1); border-color: var(--success); color: var(--success); }
+  .timer-btn.pause { background: rgba(167,139,250,0.1); border-color: var(--gold); color: var(--gold); }
+  .timer-btn.reset { background: rgba(249,168,212,0.1); border-color: var(--pink); color: var(--pink); }
+  .timer-btn:hover { opacity: 0.8; transform: translateY(-1px); }
+  .timer-progress { height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+  .timer-progress-bar { height: 100%; background: linear-gradient(90deg, var(--accent), var(--blue)); transition: width 1s linear; }
+
+  /* Map section */
+  .map-section { margin-bottom: 24px; }
+  #indiaMap { width: 100%; border-radius: var(--radius); overflow: hidden; }
+  .map-legend { display: flex; gap: 16px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* Confetti */
+  .confetti-piece {
+    position: fixed; width: 8px; height: 8px; top: -10px;
+    animation: confettiFall linear forwards;
+    pointer-events: none; z-index: 9999;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Celebration overlay */
+  .celebration {
+    position: fixed; inset: 0; z-index: 500; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .celebration-text {
+    font-size: clamp(32px, 6vw, 64px); font-weight: 900;
+    background: linear-gradient(135deg, #fdf0b0, #c4b5fd, #f9a8d4);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards, fadeOut 0.5s 2s forwards;
+    opacity: 0;
+  }
+  @keyframes popIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  @keyframes fadeOut { to { opacity: 0; } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+  ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+
+  /* Pulse animation on new destination */
+  @keyframes destPulse { 0% { transform: scale(0.95); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+  .dest-card.show { animation: destPulse 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+  .placeholder-text { color: var(--text3); font-size: 15px; text-align: center; padding: 30px 0; }
+
+  .spinning-hint { font-size: 12px; color: var(--text3); text-align: center; margin-top: 8px; }
+
+  /* type badge colors */
+  .badge-hill { background: rgba(134,239,172,0.1); color: #86efac; border: 1px solid rgba(134,239,172,0.25); }
+  .badge-beach { background: rgba(147,197,253,0.1); color: #93c5fd; border: 1px solid rgba(147,197,253,0.25); }
+  .badge-heritage { background: rgba(253,224,71,0.1); color: #fde047; border: 1px solid rgba(253,224,71,0.25); }
+  .badge-metro { background: rgba(196,181,253,0.1); color: #c4b5fd; border: 1px solid rgba(196,181,253,0.25); }
+  .badge-spiritual { background: rgba(249,168,212,0.1); color: #f9a8d4; border: 1px solid rgba(249,168,212,0.25); }
+  .badge-island { background: rgba(110,231,183,0.1); color: #6ee7b7; border: 1px solid rgba(110,231,183,0.25); }
+  .badge-wildlife { background: rgba(253,224,71,0.1); color: #fde047; border: 1px solid rgba(253,224,71,0.25); }
+  .badge-default { background: rgba(255,255,255,0.05); color: var(--text2); border: 1px solid var(--glass-border); }
+</style>
+</head>
+<body>
+
+<div class="bg-orbs">
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+  <div class="orb orb3"></div>
+</div>
+
+<div class="app">
+  <header>
+    <div class="logo">
+      
+    </div>
+    <h1>India Travel Roulette</h1>
+    
+  </header>
+
+  <!-- Source city picker -->
+  <div class="glass" style="margin-bottom: 24px;">
+    <div class="section-label">🏙️ Your starting city</div>
+    <div class="search-wrap">
+      <input type="text" id="citySearch" placeholder="Type to search cities..." autocomplete="off">
+      <div class="dropdown" id="cityDropdown"></div>
+    </div>
+    <div class="selected-city" id="selectedCityDisplay">
+      <span>📍</span>
+      <span class="city-badge" id="selCityName"></span>
+      <span class="state-tag" id="selCityState"></span>
+    </div>
+  </div>
+
+  <div class="main-grid">
+    <!-- Wheel column -->
+    <div class="glass wheel-section">
+      <div class="section-label" style="text-align:center;"> Spin the wheel</div>
+      <div class="wheel-container">
+        <canvas id="rouletteCanvas" width="280" height="280"></canvas>
+        <div class="wheel-pointer"></div>
+        <div class="wheel-center"></div>
+      </div>
+      <button class="spin-btn" id="spinBtn" disabled>Select Source City First</button>
+      <p class="spinning-hint" id="spinHint">Choose a starting city </p>
+    </div>
+
+    <!-- Destination column -->
+    <div>
+      <div class="glass" style="margin-bottom: 16px; min-height: 120px;">
+        <div class="section-label"> Your destination</div>
+        <div class="dest-card" id="destCard">
+          <div class="dest-header">
+            <div>
+              <div class="dest-name" id="destName">–</div>
+              <div class="dest-state" id="destState"></div>
+            </div>
+            <div class="dest-type-badge" id="destTypeBadge"></div>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-label">📏 Distance</div>
+              <div class="stat-value" id="distKm">–<span class="stat-unit">km</span></div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">📍 Coordinates</div>
+              <div style="font-size: 13px; color: var(--text2); margin-top: 4px;" id="destCoords">–</div>
+            </div>
+          </div>
+        </div>
+        <div class="placeholder-text" id="destPlaceholder">
+          Spin the wheel to discover your destination!
+        </div>
+      </div>
+
+      <!-- Travel modes -->
+      <div class="glass" id="travelModesWrap" style="display:none;">
+        <div class="section-label">Choose your travel mode</div>
+        <div class="travel-modes">
+          <div class="mode-card active" data-mode="flight" onclick="selectMode('flight')">
+            <div class="mode-icon">✈️</div>
+            <div class="mode-name">Flight</div>
+            <div class="mode-time" id="flightTime">–</div>
+            <div class="mode-speed">~800 km/h</div>
+          </div>
+          <div class="mode-card" data-mode="train" onclick="selectMode('train')">
+            <div class="mode-icon">🚆</div>
+            <div class="mode-name">Train</div>
+            <div class="mode-time" id="trainTime">–</div>
+            <div class="mode-speed">~80 km/h</div>
+          </div>
+          <div class="mode-card" data-mode="road" onclick="selectMode('road')">
+            <div class="mode-icon">🚗</div>
+            <div class="mode-name">Road</div>
+            <div class="mode-time" id="roadTime">–</div>
+            <div class="mode-speed">~60 km/h</div>
+          </div>
+        </div>
+
+        <!-- Timer -->
+        <div class="timer-section show" id="timerSection">
+          <div class="timer-mode-wrap">
+            <button class="timer-mode-btn active" id="realModeBtn" onclick="setTimerMode('real')">⏱ Real Duration</button>
+            <button class="timer-mode-btn" id="fastModeBtn" onclick="setTimerMode('fast')">⚡ Fast Mode (1h = 10s)</button>
+          </div>
+          <div class="timer-display">
+            <div class="timer-label" id="timerLabel">Travel duration</div>
+            <div class="timer-digits" id="timerDigits">00:00:00</div>
+            <div class="timer-progress"><div class="timer-progress-bar" id="timerBar" style="width:100%"></div></div>
+          </div>
+          <div class="timer-controls">
+            <button class="timer-btn start" id="startBtn" onclick="startTimer()">▶ Start</button>
+            <button class="timer-btn pause" id="pauseBtn" onclick="pauseTimer()" disabled>⏸ Pause</button>
+            <button class="timer-btn reset" onclick="resetTimer()">↺ Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Map -->
+  <div class="glass map-section" id="mapSection" style="display:none;">
+    <div class="section-label">🗺️ Route map</div>
+    <svg id="indiaMap" viewBox="0 0 500 560" xmlns="http://www.w3.org/2000/svg" style="background: rgba(255,255,255,0.02); border-radius: 12px;"></svg>
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--accent);"></div> Source</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--gold);"></div> Destination</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--teal); width:20px; height:3px; border-radius:2px;"></div> Route</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Celebration overlay -->
+<div class="celebration" id="celebration" style="display:none;">
+  <div class="celebration-text" id="celebText"></div>
+</div>
+
+<script>
+// ============================================================
+//  DATASET — 200+ Indian destinations
+// ============================================================
+const DESTINATIONS = [
+  // Metro Cities
+  {city:"Mumbai",state:"Maharashtra",lat:19.0760,lon:72.8777,type:"Metro"},
+  {city:"Delhi",state:"Delhi",lat:28.6139,lon:77.2090,type:"Metro"},
+  {city:"Bengaluru",state:"Karnataka",lat:12.9716,lon:77.5946,type:"Metro"},
+  {city:"Chennai",state:"Tamil Nadu",lat:13.0827,lon:80.2707,type:"Metro"},
+  {city:"Kolkata",state:"West Bengal",lat:22.5726,lon:88.3639,type:"Metro"},
+  {city:"Hyderabad",state:"Telangana",lat:17.3850,lon:78.4867,type:"Metro"},
+  {city:"Ahmedabad",state:"Gujarat",lat:23.0225,lon:72.5714,type:"Metro"},
+  {city:"Pune",state:"Maharashtra",lat:18.5204,lon:73.8567,type:"Metro"},
+  // Hill Stations
+  {city:"Darjeeling",state:"West Bengal",lat:27.0360,lon:88.2627,type:"Hill Station"},
+  {city:"Shimla",state:"Himachal Pradesh",lat:31.1048,lon:77.1734,type:"Hill Station"},
+  {city:"Manali",state:"Himachal Pradesh",lat:32.2396,lon:77.1887,type:"Hill Station"},
+  {city:"Mussoorie",state:"Uttarakhand",lat:30.4598,lon:78.0644,type:"Hill Station"},
+  {city:"Nainital",state:"Uttarakhand",lat:29.3919,lon:79.4542,type:"Hill Station"},
+  {city:"Ooty",state:"Tamil Nadu",lat:11.4102,lon:76.6950,type:"Hill Station"},
+  {city:"Kodaikanal",state:"Tamil Nadu",lat:10.2381,lon:77.4892,type:"Hill Station"},
+  {city:"Munnar",state:"Kerala",lat:10.0889,lon:77.0595,type:"Hill Station"},
+  {city:"Coorg",state:"Karnataka",lat:12.3375,lon:75.8069,type:"Hill Station"},
+  {city:"Mahabaleshwar",state:"Maharashtra",lat:17.9235,lon:73.6586,type:"Hill Station"},
+  {city:"Dharamshala",state:"Himachal Pradesh",lat:32.2190,lon:76.3234,type:"Hill Station"},
+  {city:"Kasauli",state:"Himachal Pradesh",lat:30.9104,lon:76.9638,type:"Hill Station"},
+  {city:"Dalhousie",state:"Himachal Pradesh",lat:32.5375,lon:75.9773,type:"Hill Station"},
+  {city:"Lansdowne",state:"Uttarakhand",lat:29.8396,lon:78.6861,type:"Hill Station"},
+  {city:"Ranikhet",state:"Uttarakhand",lat:29.6426,lon:79.4302,type:"Hill Station"},
+  {city:"Chail",state:"Himachal Pradesh",lat:30.9572,lon:77.1971,type:"Hill Station"},
+  {city:"Palampur",state:"Himachal Pradesh",lat:32.1111,lon:76.5361,type:"Hill Station"},
+  {city:"Yercaud",state:"Tamil Nadu",lat:11.7760,lon:78.2109,type:"Hill Station"},
+  {city:"Sakleshpur",state:"Karnataka",lat:12.9397,lon:75.7824,type:"Hill Station"},
+  {city:"Wayanad",state:"Kerala",lat:11.6854,lon:76.1320,type:"Hill Station"},
+  {city:"Vagamon",state:"Kerala",lat:9.6841,lon:76.9060,type:"Hill Station"},
+  // Beaches
+  {city:"Goa",state:"Goa",lat:15.2993,lon:74.1240,type:"Beach"},
+  {city:"Kochi",state:"Kerala",lat:9.9312,lon:76.2673,type:"Beach"},
+  {city:"Thiruvananthapuram",state:"Kerala",lat:8.5241,lon:76.9366,type:"Beach"},
+  {city:"Pondicherry",state:"Puducherry",lat:11.9416,lon:79.8083,type:"Beach"},
+  {city:"Varkala",state:"Kerala",lat:8.7379,lon:76.7163,type:"Beach"},
+  {city:"Kovalam",state:"Kerala",lat:8.3988,lon:76.9798,type:"Beach"},
+  {city:"Diu",state:"Daman & Diu",lat:20.7144,lon:70.9874,type:"Beach"},
+  {city:"Daman",state:"Daman & Diu",lat:20.3974,lon:72.8328,type:"Beach"},
+  {city:"Tarkarli",state:"Maharashtra",lat:16.0333,lon:73.4667,type:"Beach"},
+  {city:"Alibaug",state:"Maharashtra",lat:18.6414,lon:72.8722,type:"Beach"},
+  {city:"Mandarmani",state:"West Bengal",lat:21.6667,lon:87.5667,type:"Beach"},
+  {city:"Puri",state:"Odisha",lat:19.8135,lon:85.8312,type:"Beach"},
+  {city:"Vizag",state:"Andhra Pradesh",lat:17.6868,lon:83.2185,type:"Beach"},
+  {city:"Mangaluru",state:"Karnataka",lat:12.8698,lon:74.8430,type:"Beach"},
+  {city:"Marari Beach",state:"Kerala",lat:9.5500,lon:76.2833,type:"Beach"},
+  // Heritage & History
+  {city:"Jaipur",state:"Rajasthan",lat:26.9124,lon:75.7873,type:"Heritage"},
+  {city:"Agra",state:"Uttar Pradesh",lat:27.1767,lon:78.0081,type:"Heritage"},
+  {city:"Varanasi",state:"Uttar Pradesh",lat:25.3176,lon:82.9739,type:"Heritage"},
+  {city:"Khajuraho",state:"Madhya Pradesh",lat:24.8318,lon:79.9199,type:"Heritage"},
+  {city:"Hampi",state:"Karnataka",lat:15.3350,lon:76.4600,type:"Heritage"},
+  {city:"Mysuru",state:"Karnataka",lat:12.2958,lon:76.6394,type:"Heritage"},
+  {city:"Fatehpur Sikri",state:"Uttar Pradesh",lat:27.0945,lon:77.6621,type:"Heritage"},
+  {city:"Orchha",state:"Madhya Pradesh",lat:25.3506,lon:78.6422,type:"Heritage"},
+  {city:"Bhopal",state:"Madhya Pradesh",lat:23.2599,lon:77.4126,type:"Heritage"},
+  {city:"Mandu",state:"Madhya Pradesh",lat:22.3667,lon:75.3833,type:"Heritage"},
+  {city:"Chittorgarh",state:"Rajasthan",lat:24.8887,lon:74.6269,type:"Heritage"},
+  {city:"Jodhpur",state:"Rajasthan",lat:26.2389,lon:73.0243,type:"Heritage"},
+  {city:"Udaipur",state:"Rajasthan",lat:24.5854,lon:73.7125,type:"Heritage"},
+  {city:"Bikaner",state:"Rajasthan",lat:28.0229,lon:73.3119,type:"Heritage"},
+  {city:"Jaisalmer",state:"Rajasthan",lat:26.9157,lon:70.9083,type:"Heritage"},
+  {city:"Pushkar",state:"Rajasthan",lat:26.4898,lon:74.5511,type:"Spiritual"},
+  {city:"Ajmer",state:"Rajasthan",lat:26.4499,lon:74.6399,type:"Heritage"},
+  {city:"Patna",state:"Bihar",lat:25.5941,lon:85.1376,type:"Heritage"},
+  {city:"Bodh Gaya",state:"Bihar",lat:24.6961,lon:84.9913,type:"Spiritual"},
+  {city:"Nalanda",state:"Bihar",lat:25.1366,lon:85.4434,type:"Heritage"},
+  // Northeast
+  {city:"Guwahati",state:"Assam",lat:26.1445,lon:91.7362,type:"Northeast"},
+  {city:"Shillong",state:"Meghalaya",lat:25.5788,lon:91.8933,type:"Hill Station"},
+  {city:"Gangtok",state:"Sikkim",lat:27.3314,lon:88.6138,type:"Hill Station"},
+  {city:"Darjeeling",state:"West Bengal",lat:27.0360,lon:88.2627,type:"Hill Station"},
+  {city:"Tawang",state:"Arunachal Pradesh",lat:27.5859,lon:91.8648,type:"Northeast"},
+  {city:"Ziro",state:"Arunachal Pradesh",lat:27.5449,lon:93.8297,type:"Northeast"},
+  {city:"Cherrapunji",state:"Meghalaya",lat:25.2845,lon:91.7020,type:"Northeast"},
+  {city:"Kaziranga",state:"Assam",lat:26.5775,lon:93.1711,type:"Wildlife"},
+  {city:"Majuli",state:"Assam",lat:26.9500,lon:94.1667,type:"Northeast"},
+  {city:"Dibrugarh",state:"Assam",lat:27.4728,lon:94.9120,type:"Northeast"},
+  {city:"Imphal",state:"Manipur",lat:24.8170,lon:93.9368,type:"Northeast"},
+  {city:"Kohima",state:"Nagaland",lat:25.6751,lon:94.1086,type:"Northeast"},
+  {city:"Aizawl",state:"Mizoram",lat:23.7307,lon:92.7173,type:"Northeast"},
+  {city:"Agartala",state:"Tripura",lat:23.8315,lon:91.2868,type:"Northeast"},
+  {city:"Itanagar",state:"Arunachal Pradesh",lat:27.0844,lon:93.6053,type:"Northeast"},
+  // Islands
+  {city:"Port Blair",state:"Andaman & Nicobar",lat:11.6234,lon:92.7265,type:"Island"},
+  {city:"Havelock Island",state:"Andaman & Nicobar",lat:12.0057,lon:92.9777,type:"Island"},
+  {city:"Neil Island",state:"Andaman & Nicobar",lat:11.8316,lon:93.0504,type:"Island"},
+  {city:"Kavaratti",state:"Lakshadweep",lat:10.5626,lon:72.6369,type:"Island"},
+  {city:"Agatti",state:"Lakshadweep",lat:10.8565,lon:72.1949,type:"Island"},
+  // Spiritual
+  {city:"Rishikesh",state:"Uttarakhand",lat:30.0869,lon:78.2676,type:"Spiritual"},
+  {city:"Haridwar",state:"Uttarakhand",lat:29.9457,lon:78.1642,type:"Spiritual"},
+  {city:"Mathura",state:"Uttar Pradesh",lat:27.4924,lon:77.6737,type:"Spiritual"},
+  {city:"Vrindavan",state:"Uttar Pradesh",lat:27.5776,lon:77.7006,type:"Spiritual"},
+  {city:"Prayagraj",state:"Uttar Pradesh",lat:25.4358,lon:81.8463,type:"Spiritual"},
+  {city:"Ayodhya",state:"Uttar Pradesh",lat:26.7922,lon:82.1998,type:"Spiritual"},
+  {city:"Shirdi",state:"Maharashtra",lat:19.7656,lon:74.4777,type:"Spiritual"},
+  {city:"Tirupati",state:"Andhra Pradesh",lat:13.6288,lon:79.4192,type:"Spiritual"},
+  {city:"Madurai",state:"Tamil Nadu",lat:9.9252,lon:78.1198,type:"Spiritual"},
+  {city:"Amritsar",state:"Punjab",lat:31.6340,lon:74.8723,type:"Spiritual"},
+  {city:"Dwarka",state:"Gujarat",lat:22.2394,lon:68.9678,type:"Spiritual"},
+  {city:"Somnath",state:"Gujarat",lat:20.8876,lon:70.4018,type:"Spiritual"},
+  {city:"Ujjain",state:"Madhya Pradesh",lat:23.1765,lon:75.7885,type:"Spiritual"},
+  {city:"Nashik",state:"Maharashtra",lat:19.9975,lon:73.7898,type:"Spiritual"},
+  {city:"Kashi",state:"Uttar Pradesh",lat:25.3176,lon:82.9739,type:"Spiritual"},
+  // Wildlife & Nature
+  {city:"Jim Corbett",state:"Uttarakhand",lat:29.5300,lon:78.7747,type:"Wildlife"},
+  {city:"Ranthambore",state:"Rajasthan",lat:26.0173,lon:76.5026,type:"Wildlife"},
+  {city:"Sundarbans",state:"West Bengal",lat:21.9497,lon:88.9318,type:"Wildlife"},
+  {city:"Bandhavgarh",state:"Madhya Pradesh",lat:23.7217,lon:81.0447,type:"Wildlife"},
+  {city:"Kanha",state:"Madhya Pradesh",lat:22.2756,lon:80.6110,type:"Wildlife"},
+  {city:"Pench",state:"Madhya Pradesh",lat:21.7500,lon:79.2833,type:"Wildlife"},
+  {city:"Periyar",state:"Kerala",lat:9.4583,lon:77.1626,type:"Wildlife"},
+  {city:"Dudhwa",state:"Uttar Pradesh",lat:28.4967,lon:80.7667,type:"Wildlife"},
+  // Mountain & Adventure
+  {city:"Leh",state:"Ladakh",lat:34.1526,lon:77.5771,type:"Mountain"},
+  {city:"Srinagar",state:"Jammu & Kashmir",lat:34.0837,lon:74.7973,type:"Mountain"},
+  {city:"Pahalgam",state:"Jammu & Kashmir",lat:34.0154,lon:75.3151,type:"Mountain"},
+  {city:"Gulmarg",state:"Jammu & Kashmir",lat:34.0500,lon:74.3833,type:"Mountain"},
+  {city:"Spiti Valley",state:"Himachal Pradesh",lat:32.2464,lon:78.0325,type:"Mountain"},
+  {city:"Lahaul",state:"Himachal Pradesh",lat:32.5685,lon:77.1832,type:"Mountain"},
+  {city:"Kedarnath",state:"Uttarakhand",lat:30.7346,lon:79.0669,type:"Spiritual"},
+  {city:"Badrinath",state:"Uttarakhand",lat:30.7433,lon:79.4938,type:"Spiritual"},
+  {city:"Auli",state:"Uttarakhand",lat:30.5000,lon:79.5667,type:"Mountain"},
+  {city:"Chopta",state:"Uttarakhand",lat:30.4167,lon:79.3500,type:"Mountain"},
+  {city:"Munsiyari",state:"Uttarakhand",lat:30.0683,lon:80.2383,type:"Mountain"},
+  // Other tier-2 cities & destinations
+  {city:"Lucknow",state:"Uttar Pradesh",lat:26.8467,lon:80.9462,type:"Heritage"},
+  {city:"Chandigarh",state:"Punjab",lat:30.7333,lon:76.7794,type:"Metro"},
+  {city:"Indore",state:"Madhya Pradesh",lat:22.7196,lon:75.8577,type:"Metro"},
+  {city:"Nagpur",state:"Maharashtra",lat:21.1458,lon:79.0882,type:"Metro"},
+  {city:"Surat",state:"Gujarat",lat:21.1702,lon:72.8311,type:"Metro"},
+  {city:"Vadodara",state:"Gujarat",lat:22.3072,lon:73.1812,type:"Heritage"},
+  {city:"Coimbatore",state:"Tamil Nadu",lat:11.0168,lon:76.9558,type:"Metro"},
+  {city:"Vijaywada",state:"Andhra Pradesh",lat:16.5062,lon:80.6480,type:"Metro"},
+  {city:"Ranchi",state:"Jharkhand",lat:23.3441,lon:85.3096,type:"Metro"},
+  {city:"Bhubaneswar",state:"Odisha",lat:20.2961,lon:85.8245,type:"Heritage"},
+  {city:"Raipur",state:"Chhattisgarh",lat:21.2514,lon:81.6296,type:"Metro"},
+  {city:"Dehradun",state:"Uttarakhand",lat:30.3165,lon:78.0322,type:"Metro"},
+  {city:"Jodhpur",state:"Rajasthan",lat:26.2389,lon:73.0243,type:"Heritage"},
+  {city:"Aurangabad",state:"Maharashtra",lat:19.8762,lon:75.3433,type:"Heritage"},
+  {city:"Trichy",state:"Tamil Nadu",lat:10.7905,lon:78.7047,type:"Heritage"},
+  {city:"Vijayawada",state:"Andhra Pradesh",lat:16.5062,lon:80.6480,type:"Metro"},
+  {city:"Srinagar",state:"Jammu & Kashmir",lat:34.0837,lon:74.7973,type:"Mountain"},
+  {city:"Kottayam",state:"Kerala",lat:9.5916,lon:76.5222,type:"Nature"},
+  {city:"Kollam",state:"Kerala",lat:8.8932,lon:76.6141,type:"Beach"},
+  {city:"Thrissur",state:"Kerala",lat:10.5276,lon:76.2144,type:"Heritage"},
+  {city:"Kozhikode",state:"Kerala",lat:11.2588,lon:75.7804,type:"Heritage"},
+  {city:"Bekal",state:"Kerala",lat:12.3933,lon:75.0367,type:"Beach"},
+  {city:"Kannur",state:"Kerala",lat:11.8745,lon:75.3704,type:"Beach"},
+  {city:"Alleppey",state:"Kerala",lat:9.4981,lon:76.3388,type:"Beach"},
+  {city:"Kasargod",state:"Kerala",lat:12.4996,lon:74.9869,type:"Beach"},
+  {city:"Mandvi",state:"Gujarat",lat:22.8308,lon:69.3508,type:"Beach"},
+  {city:"Kutch",state:"Gujarat",lat:23.1115,lon:69.8597,type:"Heritage"},
+  {city:"Saputara",state:"Gujarat",lat:20.5671,lon:73.7488,type:"Hill Station"},
+  {city:"Mount Abu",state:"Rajasthan",lat:24.5926,lon:72.7156,type:"Hill Station"},
+  {city:"Nathdwara",state:"Rajasthan",lat:24.9369,lon:73.8254,type:"Spiritual"},
+  {city:"Ranthambore",state:"Rajasthan",lat:26.0173,lon:76.5026,type:"Wildlife"},
+  {city:"Kumbhalgarh",state:"Rajasthan",lat:25.1482,lon:73.5872,type:"Heritage"},
+  {city:"Bundi",state:"Rajasthan",lat:25.4453,lon:75.6381,type:"Heritage"},
+  {city:"Alwar",state:"Rajasthan",lat:27.5530,lon:76.6346,type:"Heritage"},
+  {city:"Lonavala",state:"Maharashtra",lat:18.7481,lon:73.4072,type:"Hill Station"},
+  {city:"Matheran",state:"Maharashtra",lat:18.9867,lon:73.2714,type:"Hill Station"},
+  {city:"Panchgani",state:"Maharashtra",lat:17.9267,lon:73.8022,type:"Hill Station"},
+  {city:"Igatpuri",state:"Maharashtra",lat:19.6955,lon:73.5624,type:"Hill Station"},
+  {city:"Kolhapur",state:"Maharashtra",lat:16.7050,lon:74.2433,type:"Heritage"},
+  {city:"Ratnagiri",state:"Maharashtra",lat:16.9944,lon:73.3000,type:"Beach"},
+  {city:"Sindhudurg",state:"Maharashtra",lat:16.3333,lon:73.7500,type:"Beach"},
+  {city:"Ellora",state:"Maharashtra",lat:20.0258,lon:75.1791,type:"Heritage"},
+  {city:"Ajanta",state:"Maharashtra",lat:20.5519,lon:75.7033,type:"Heritage"},
+  {city:"Pachmarhi",state:"Madhya Pradesh",lat:22.4671,lon:78.4337,type:"Hill Station"},
+  {city:"Amarkantak",state:"Madhya Pradesh",lat:22.6740,lon:81.7582,type:"Spiritual"},
+  {city:"Gwalior",state:"Madhya Pradesh",lat:26.2183,lon:78.1828,type:"Heritage"},
+  {city:"Sanchi",state:"Madhya Pradesh",lat:23.4793,lon:77.7398,type:"Heritage"},
+  {city:"Pattadakal",state:"Karnataka",lat:15.9480,lon:75.8177,type:"Heritage"},
+  {city:"Badami",state:"Karnataka",lat:15.9167,lon:75.6833,type:"Heritage"},
+  {city:"Bijapur",state:"Karnataka",lat:16.8302,lon:75.7100,type:"Heritage"},
+  {city:"Chikmagalur",state:"Karnataka",lat:13.3153,lon:75.7754,type:"Hill Station"},
+  {city:"Udupi",state:"Karnataka",lat:13.3409,lon:74.7421,type:"Spiritual"},
+  {city:"Kabini",state:"Karnataka",lat:11.9000,lon:76.3500,type:"Wildlife"},
+  {city:"Nagarhole",state:"Karnataka",lat:12.1000,lon:76.1500,type:"Wildlife"},
+  {city:"Hospet",state:"Karnataka",lat:15.2689,lon:76.3909,type:"Heritage"},
+  {city:"Chikkaballapur",state:"Karnataka",lat:13.4333,lon:77.7167,type:"Nature"},
+  {city:"Bylakuppe",state:"Karnataka",lat:12.4333,lon:76.1333,type:"Spiritual"},
+  {city:"Vellore",state:"Tamil Nadu",lat:12.9165,lon:79.1325,type:"Heritage"},
+  {city:"Mahabalipuram",state:"Tamil Nadu",lat:12.6269,lon:80.1927,type:"Heritage"},
+  {city:"Kanchipuram",state:"Tamil Nadu",lat:12.8185,lon:79.6947,type:"Heritage"},
+  {city:"Thanjavur",state:"Tamil Nadu",lat:10.7870,lon:79.1378,type:"Heritage"},
+  {city:"Rameswaram",state:"Tamil Nadu",lat:9.2876,lon:79.3129,type:"Spiritual"},
+  {city:"Kumbakonam",state:"Tamil Nadu",lat:10.9617,lon:79.3788,type:"Heritage"},
+  {city:"Chidambaram",state:"Tamil Nadu",lat:11.3992,lon:79.6933,type:"Spiritual"},
+  {city:"Kanyakumari",state:"Tamil Nadu",lat:8.0883,lon:77.5385,type:"Spiritual"},
+  {city:"Yelagiri",state:"Tamil Nadu",lat:12.5773,lon:78.6432,type:"Hill Station"},
+  {city:"Valparai",state:"Tamil Nadu",lat:10.3264,lon:76.9570,type:"Hill Station"},
+  {city:"Coonoor",state:"Tamil Nadu",lat:11.3530,lon:76.7959,type:"Hill Station"},
+  {city:"Kurnool",state:"Andhra Pradesh",lat:15.8281,lon:78.0373,type:"Heritage"},
+  {city:"Lepakshi",state:"Andhra Pradesh",lat:13.8019,lon:77.6100,type:"Heritage"},
+  {city:"Araku Valley",state:"Andhra Pradesh",lat:18.3270,lon:82.8750,type:"Hill Station"},
+  {city:"Srisailam",state:"Andhra Pradesh",lat:16.0770,lon:78.8733,type:"Spiritual"},
+  {city:"Borra Caves",state:"Andhra Pradesh",lat:18.2833,lon:83.0167,type:"Nature"},
+  {city:"Horsley Hills",state:"Andhra Pradesh",lat:13.6580,lon:78.3930,type:"Hill Station"},
+  {city:"Nellore",state:"Andhra Pradesh",lat:14.4426,lon:79.9865,type:"Metro"},
+  {city:"Warangal",state:"Telangana",lat:18.0000,lon:79.5833,type:"Heritage"},
+  {city:"Nagarjunasagar",state:"Telangana",lat:16.5752,lon:79.3192,type:"Heritage"},
+  {city:"Nirmal",state:"Telangana",lat:19.0975,lon:78.3464,type:"Heritage"},
+];
+
+// ============================================================
+//  STATE
+// ============================================================
+let sourceCity = null;
+let destCity = null;
+let spinning = false;
+let currentAngle = 0;
+let selectedMode = 'flight';
+let timerMode = 'real'; // 'real' or 'fast'
+let timerTotal = 0; // seconds
+let timerRemaining = 0;
+let timerRunning = false;
+let timerInterval = null;
+const SPEEDS = { flight: 800, train: 80, road: 60 };
+
+// ============================================================
+//  CITY SEARCH
+// ============================================================
+const allCities = [...new Set(DESTINATIONS.map(d => JSON.stringify({city:d.city, state:d.state, lat:d.lat, lon:d.lon})))].map(s => JSON.parse(s));
+const citySearch = document.getElementById('citySearch');
+const cityDropdown = document.getElementById('cityDropdown');
+
+citySearch.addEventListener('input', () => {
+  const q = citySearch.value.toLowerCase().trim();
+  if (!q) { cityDropdown.classList.remove('open'); return; }
+  const matches = allCities.filter(c => c.city.toLowerCase().includes(q) || c.state.toLowerCase().includes(q)).slice(0, 20);
+  if (!matches.length) { cityDropdown.classList.remove('open'); return; }
+  cityDropdown.innerHTML = matches.map((c, i) =>
+    `<div class="dropdown-item" onclick="selectSourceCity(${i})" data-idx="${i}">
+      ${c.city} <small>• ${c.state}</small>
+    </div>`
+  ).join('');
+  cityDropdown.querySelectorAll('.dropdown-item').forEach((el, i) => {
+    el.onclick = () => selectSourceCity(matches[i]);
+  });
+  cityDropdown.classList.add('open');
+});
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.search-wrap')) cityDropdown.classList.remove('open');
+});
+
+function selectSourceCity(city) {
+  sourceCity = city;
+  citySearch.value = city.city;
+  cityDropdown.classList.remove('open');
+  document.getElementById('selCityName').textContent = city.city;
+  document.getElementById('selCityState').textContent = city.state;
+  document.getElementById('selectedCityDisplay').classList.add('show');
+  document.getElementById('spinBtn').disabled = false;
+  document.getElementById('spinBtn').textContent = 'Spin the Wheel!';
+  document.getElementById('spinHint').textContent = 'Click to discover your random destination!';
+  drawWheel();
+}
+
+// ============================================================
+//  ROULETTE WHEEL
+// ============================================================
+const canvas = document.getElementById('rouletteCanvas');
+const ctx = canvas.getContext('2d');
+
+// 12 fixed segments — each is a destination type with its own pastel color
+const WHEEL_SEGMENTS = [
+  { type: 'Hill Station', color: '#b8ddb8', label: 'Hill Station' },
+  { type: 'Beach',        color: '#b8d8f0', label: 'Beach'        },
+  { type: 'Heritage',     color: '#fdf0b0', label: 'Heritage'     },
+  { type: 'Spiritual',    color: '#f9c6d0', label: 'Spiritual'    },
+  { type: 'Wildlife',     color: '#c8e8d8', label: 'Wildlife'     },
+  { type: 'Metro',        color: '#e8c8f0', label: 'Metro'        },
+  { type: 'Mountain',     color: '#b8ddb8', label: 'Mountain'     },
+  { type: 'Island',       color: '#b8d8f0', label: 'Island'       },
+  { type: 'Northeast',    color: '#fdf0b0', label: 'Northeast'    },
+  { type: 'Nature',       color: '#f9c6d0', label: 'Nature'       },
+  { type: 'Heritage',     color: '#f9d8b8', label: 'Heritage'     },
+  { type: 'Spiritual',    color: '#f0c8e0', label: 'Spiritual'    },
+];
+
+const SLICE_ANGLE = (2 * Math.PI) / WHEEL_SEGMENTS.length;
+
+// The pointer sits at the top (–π/2). This tells us which segment index
+// is under the pointer given a wheel rotation angle.
+function getSegmentUnderPointer(angle) {
+  // Normalise angle so segment 0 starts at –π/2 (top)
+  const norm = (((-angle - Math.PI / 2) % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  return Math.floor(norm / SLICE_ANGLE) % WHEEL_SEGMENTS.length;
+}
+
+function drawWheel(angle = 0, highlightIdx = -1) {
+  const cx = 140, cy = 140, r = 130;
+  ctx.clearRect(0, 0, 280, 280);
+
+  WHEEL_SEGMENTS.forEach((seg, i) => {
+    const startAngle = angle + i * SLICE_ANGLE;
+    const endAngle   = startAngle + SLICE_ANGLE;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, r, startAngle, endAngle);
+    ctx.closePath();
+    ctx.fillStyle = seg.color;
+    ctx.fill();
+
+    // Highlight winning segment with a bright inner ring
+    if (i === highlightIdx) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r - 4, startAngle, endAngle);
+      ctx.closePath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    ctx.strokeStyle = 'rgba(20,10,50,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Label
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(startAngle + SLICE_ANGLE / 2);
+    ctx.textAlign = 'right';
+    ctx.fillStyle = 'rgba(20,10,50,0.72)';
+    ctx.font = 'bold 9.5px system-ui';
+    ctx.fillText(seg.label, r - 10, 4);
+    ctx.restore();
+  });
+
+  // Outer ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(196,181,253,0.4)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  // Inner hub
+  ctx.beginPath();
+  ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
+  ctx.fillStyle = '#0d1126';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(196,181,253,0.3)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+drawWheel();
+
+document.getElementById('spinBtn').addEventListener('click', spinWheel);
+
+function spinWheel() {
+  if (spinning || !sourceCity) return;
+  spinning = true;
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('spinBtn').textContent = '🌀 Spinning...';
+
+  // 1. Pick a random destination (not same city as source)
+  let validDests = DESTINATIONS.filter(d => d.city !== sourceCity.city);
+  destCity = validDests[Math.floor(Math.random() * validDests.length)];
+
+  // 2. Find which segment index matches that destination's type
+  const targetType = destCity.type;
+  const matchingIdx = WHEEL_SEGMENTS.findIndex(s => s.type === targetType);
+  const landingIdx  = matchingIdx >= 0 ? matchingIdx : 0;
+
+  // 3. Work out what final angle places landingIdx under the pointer
+  //    Pointer is at top (–π/2). Segment i starts at angle + i * SLICE_ANGLE.
+  //    We want: angle + landingIdx * SLICE_ANGLE + SLICE_ANGLE/2 = –π/2  (mod 2π)
+  //    => finalAngle = –π/2 – (landingIdx + 0.5) * SLICE_ANGLE
+  const baseAngle   = -Math.PI / 2 - (landingIdx + 0.5) * SLICE_ANGLE;
+  const fullSpins   = (8 + Math.floor(Math.random() * 5)) * 2 * Math.PI;
+  const finalAngle  = baseAngle - fullSpins; // always lands on the right segment
+
+  const spinDuration = 4500;
+  let startTime = null;
+  const startAngle = currentAngle;
+
+  function animate(ts) {
+    if (!startTime) startTime = ts;
+    const elapsed  = ts - startTime;
+    const progress = Math.min(elapsed / spinDuration, 1);
+    const eased    = 1 - Math.pow(1 - progress, 3);
+    currentAngle   = startAngle + (finalAngle - startAngle) * eased;
+    drawWheel(currentAngle);
+    if (progress < 1) {
+      requestAnimationFrame(animate);
+    } else {
+      currentAngle = finalAngle;
+      drawWheel(currentAngle, landingIdx); // highlight winning segment
+      spinning = false;
+      onDestSelected();
+    }
+  }
+  requestAnimationFrame(animate);
+}
+
+// ============================================================
+//  DESTINATION SELECTED
+// ============================================================
+function onDestSelected() {
+  const dist = haversine(sourceCity.lat, sourceCity.lon, destCity.lat, destCity.lon);
+  const times = {
+    flight: dist / SPEEDS.flight,
+    train: dist / SPEEDS.train,
+    road: dist / SPEEDS.road,
+  };
+
+  // Update UI
+  document.getElementById('destCard').classList.add('show');
+  document.getElementById('destPlaceholder').style.display = 'none';
+  document.getElementById('destName').textContent = destCity.city;
+  document.getElementById('destState').textContent = `${destCity.state}`;
+  document.getElementById('destCoords').textContent = `${destCity.lat.toFixed(2)}°N, ${destCity.lon.toFixed(2)}°E`;
+  document.getElementById('distKm').innerHTML = `${Math.round(dist).toLocaleString()}<span class="stat-unit">km</span>`;
+
+  const badge = document.getElementById('destTypeBadge');
+  badge.textContent = destCity.type;
+  badge.className = 'dest-type-badge ' + getBadgeClass(destCity.type);
+
+  document.getElementById('flightTime').textContent = formatTime(times.flight);
+  document.getElementById('trainTime').textContent = formatTime(times.train);
+  document.getElementById('roadTime').textContent = formatTime(times.road);
+
+  document.getElementById('travelModesWrap').style.display = 'block';
+  document.getElementById('mapSection').style.display = 'block';
+
+  // Set timer
+  setTimerForMode(selectedMode, dist);
+  resetTimer();
+
+  // Draw map
+  drawMap();
+
+  // Celebration
+  celebrate(destCity.city);
+
+  document.getElementById('spinBtn').disabled = false;
+  document.getElementById('spinBtn').textContent = '🎲 Spin Again!';
+  document.getElementById('spinHint').textContent = 'Not happy? Spin again!';
+}
+
+function getBadgeClass(type) {
+  const map = {
+    'Hill Station':'badge-hill','Beach':'badge-beach','Heritage':'badge-heritage','Metro':'badge-metro',
+    'Spiritual':'badge-spiritual','Island':'badge-island','Wildlife':'badge-wildlife','Mountain':'badge-hill',
+    'Northeast':'badge-metro','Nature':'badge-hill','Adventure':'badge-metro'
+  };
+  return map[type] || 'badge-default';
+}
+
+// ============================================================
+//  HAVERSINE
+// ============================================================
+function haversine(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function formatTime(hours) {
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${h}h ${m < 10 ? '0' : ''}${m}m`;
+}
+
+// ============================================================
+//  TRAVEL MODE
+// ============================================================
+function selectMode(mode) {
+  selectedMode = mode;
+  document.querySelectorAll('.mode-card').forEach(c => c.classList.toggle('active', c.dataset.mode === mode));
+  if (destCity && sourceCity) {
+    const dist = haversine(sourceCity.lat, sourceCity.lon, destCity.lat, destCity.lon);
+    setTimerForMode(mode, dist);
+    resetTimer();
+    drawMap();
+  }
+}
+
+function setTimerForMode(mode, dist) {
+  const hours = dist / SPEEDS[mode];
+  if (timerMode === 'real') {
+    timerTotal = Math.round(hours * 3600);
+  } else {
+    timerTotal = Math.round(hours * 10); // 1hr = 10s
+  }
+  timerRemaining = timerTotal;
+  updateTimerDisplay();
+}
+
+// ============================================================
+//  TIMER
+// ============================================================
+function setTimerMode(mode) {
+  timerMode = mode;
+  document.getElementById('realModeBtn').classList.toggle('active', mode === 'real');
+  document.getElementById('fastModeBtn').classList.toggle('active', mode === 'fast');
+  if (destCity && sourceCity) {
+    const dist = haversine(sourceCity.lat, sourceCity.lon, destCity.lat, destCity.lon);
+    setTimerForMode(selectedMode, dist);
+    resetTimer();
+  }
+}
+
+function startTimer() {
+  if (timerRunning || timerRemaining <= 0) return;
+  timerRunning = true;
+  document.getElementById('startBtn').disabled = true;
+  document.getElementById('pauseBtn').disabled = false;
+  timerInterval = setInterval(() => {
+    timerRemaining--;
+    updateTimerDisplay();
+    if (timerRemaining <= 0) {
+      clearInterval(timerInterval);
+      timerRunning = false;
+      document.getElementById('timerDigits').style.background = 'linear-gradient(135deg, #86efac, #c4b5fd)';
+      document.getElementById('timerLabel').textContent = '🎉 You\'ve arrived!';
+    }
+  }, 1000);
+}
+
+function pauseTimer() {
+  if (!timerRunning) return;
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('pauseBtn').disabled = true;
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerRemaining = timerTotal;
+  document.getElementById('startBtn').disabled = false;
+  document.getElementById('pauseBtn').disabled = true;
+  document.getElementById('timerDigits').style.background = 'linear-gradient(135deg, #c4b5fd, #93c5fd)';
+  document.getElementById('timerLabel').textContent = 'Travel duration';
+  updateTimerDisplay();
+}
+
+function updateTimerDisplay() {
+  const h = Math.floor(timerRemaining / 3600);
+  const m = Math.floor((timerRemaining % 3600) / 60);
+  const s = timerRemaining % 60;
+  document.getElementById('timerDigits').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const pct = timerTotal > 0 ? (timerRemaining / timerTotal) * 100 : 100;
+  document.getElementById('timerBar').style.width = pct + '%';
+}
+
+// ============================================================
+//  INDIA SVG MAP
+// ============================================================
+// Simplified India outline path + major state boundaries
+// Using approximate Lat/Lon to SVG coordinate mapping
+function latLonToSVG(lat, lon) {
+  // India bounds: lat 8-37, lon 68-97
+  const minLat=8, maxLat=37, minLon=68, maxLon=97;
+  const x = ((lon - minLon) / (maxLon - minLon)) * 420 + 40;
+  const y = ((maxLat - lat) / (maxLat - minLat)) * 480 + 40;
+  return {x, y};
+}
+
+// Simplified India outline (clockwise from northwest)
+const INDIA_PATH = `M 120 40 L 160 35 L 195 40 L 220 38 L 250 35 L 280 42 L 310 38 L 340 50 L 370 55 L 390 65 L 410 80 L 420 100 L 415 120 L 420 140 L 410 160 L 405 180 L 410 200 L 405 220 L 400 240 L 390 260 L 380 280 L 370 295 L 360 310 L 350 325 L 340 340 L 330 355 L 320 370 L 310 385 L 300 400 L 290 415 L 280 430 L 270 440 L 260 450 L 250 460 L 240 470 L 230 475 L 220 470 L 210 460 L 205 445 L 200 430 L 195 415 L 190 400 L 185 385 L 180 370 L 175 355 L 170 340 L 175 325 L 180 310 L 170 295 L 160 280 L 150 265 L 140 255 L 130 245 L 120 235 L 110 225 L 100 215 L 95 200 L 90 185 L 85 170 L 80 155 L 78 140 L 80 125 L 85 110 L 90 95 L 95 80 L 100 65 L 110 52 Z`;
+
+function drawMap() {
+  const svg = document.getElementById('indiaMap');
+  if (!sourceCity || !destCity) return;
+
+  const src = latLonToSVG(sourceCity.lat, sourceCity.lon);
+  const dst = latLonToSVG(destCity.lat, destCity.lon);
+
+  const modeIcons = { flight:'✈', train:'🚆', road:'🚗' };
+  const icon = modeIcons[selectedMode];
+
+  // Midpoint for curve
+  const mx = (src.x + dst.x) / 2;
+  const my = Math.min(src.y, dst.y) - 60;
+
+  svg.innerHTML = `
+    <defs>
+      <radialGradient id="mapBg" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" style="stop-color:#111630;stop-opacity:1" />
+        <stop offset="100%" style="stop-color:#080b18;stop-opacity:1" />
+      </radialGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="2" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+        <polygon points="0 0, 6 2, 0 4" fill="#14b8a6" opacity="0.8"/>
+      </marker>
+    </defs>
+    <rect width="500" height="560" fill="url(#mapBg)" rx="12"/>
+
+    <!-- Grid lines -->
+    ${Array.from({length:8}, (_,i) => `<line x1="40" y1="${80+i*60}" x2="460" y2="${80+i*60}" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`).join('')}
+    ${Array.from({length:7}, (_,i) => `<line x1="${80+i*60}" y1="40" x2="${80+i*60}" y2="520" stroke="rgba(255,255,255,0.04)" stroke-width="1"/>`).join('')}
+
+    <!-- India outline -->
+    <path d="${INDIA_PATH}" fill="rgba(96,165,250,0.08)" stroke="rgba(96,165,250,0.25)" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- Route line (curved) -->
+    <path d="M ${src.x} ${src.y} Q ${mx} ${my} ${dst.x} ${dst.y}"
+      fill="none" stroke="#14b8a6" stroke-width="2" stroke-dasharray="6,4" opacity="0.7"
+      marker-end="url(#arrowhead)">
+      <animate attributeName="stroke-dashoffset" from="100" to="0" dur="2s" repeatCount="indefinite"/>
+    </path>
+
+    <!-- Moving icon along path -->
+    <text font-size="16" text-anchor="middle" dominant-baseline="middle" filter="url(#glow)">
+      <textPath href="#routePath" startOffset="0%">${icon}
+        <animate attributeName="startOffset" from="0%" to="100%" dur="4s" repeatCount="indefinite"/>
+      </textPath>
+    </text>
+    <path id="routePath" d="M ${src.x} ${src.y} Q ${mx} ${my} ${dst.x} ${dst.y}" fill="none" opacity="0"/>
+
+    <!-- Source marker -->
+    <circle cx="${src.x}" cy="${src.y}" r="10" fill="rgba(249,115,22,0.2)" stroke="#f97316" stroke-width="2">
+      <animate attributeName="r" values="10;14;10" dur="2s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${src.x}" cy="${src.y}" r="5" fill="#f97316"/>
+    <text x="${src.x}" y="${src.y - 16}" fill="#f97316" font-size="11" font-weight="bold" text-anchor="middle">${sourceCity.city}</text>
+
+    <!-- Destination marker -->
+    <circle cx="${dst.x}" cy="${dst.y}" r="10" fill="rgba(251,191,36,0.2)" stroke="#fbbf24" stroke-width="2">
+      <animate attributeName="r" values="10;14;10" dur="2s" begin="1s" repeatCount="indefinite"/>
+    </circle>
+    <circle cx="${dst.x}" cy="${dst.y}" r="5" fill="#fbbf24"/>
+    <text x="${dst.x}" y="${dst.y - 16}" fill="#fbbf24" font-size="11" font-weight="bold" text-anchor="middle">${destCity.city}</text>
+
+    <!-- Labels -->
+    <text x="250" y="535" fill="rgba(255,255,255,0.2)" font-size="10" text-anchor="middle">Map is schematic · not to geographical scale</text>
+  `;
+}
+
+// ============================================================
+//  CONFETTI CELEBRATION
+// ============================================================
+function celebrate(cityName) {
+  // Show celebration text
+  const cel = document.getElementById('celebration');
+  const celText = document.getElementById('celebText');
+  cel.style.display = 'flex';
+  celText.textContent = `🎉 ${cityName}!`;
+  setTimeout(() => { cel.style.display = 'none'; }, 3000);
+
+  // Confetti burst
+  const colors = ['#f9c6d0','#b8ddb8','#fdf0b0','#b8d8f0','#e8c8f0','#c4b5fd','#93c5fd','#f9a8d4','#86efac'];
+  for (let i = 0; i < 80; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+    piece.style.width = (6 + Math.random() * 6) + 'px';
+    piece.style.height = (6 + Math.random() * 6) + 'px';
+    piece.style.animationDuration = (2 + Math.random() * 3) + 's';
+    piece.style.animationDelay = Math.random() * 0.5 + 's';
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 6000);
+  }
+}
+
+// Initial wheel draw
+drawWheel();
+</script>
+</body>
+</html>
